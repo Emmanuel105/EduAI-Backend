@@ -1,0 +1,61 @@
+databases:
+  - name: eduai-db
+    databaseName: eduai
+    user: eduai
+    plan: free
+    region: oregon
+
+services:
+  # Web Service (Django API)
+  - type: web
+    name: eduai-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: eduai-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://your-frontend-url.com"
+      - key: PYTHON_VERSION
+        value: "3.11.7"
+      - key: DJANGO_LOG_LEVEL
+        value: "INFO"
+
+  # Redis for Celery (optional - comment out if not needed initially)
+  # - type: redis
+  #   name: eduai-redis
+  #   plan: free
+  #   region: oregon
+  #   maxmemoryPolicy: noeviction
+
+  # Celery Worker (optional - uncomment when ready)
+  # - type: worker
+  #   name: eduai-worker
+  #   runtime: python
+  #   region: oregon
+  #   plan: free
+  #   buildCommand: "pip install -r requirements.txt"
+  #   startCommand: "celery -A config worker --loglevel=info"
+  #   envVars:
+  #     - key: DATABASE_URL
+  #       fromDatabase:
+  #         name: eduai-db
+  #         property: connectionString
+  #     - key: CELERY_BROKER_URL
+  #       fromService:
+  #         name: eduai-redis
+  #         type: redis
+  #         property: connectionString
+  #     - key: SECRET_KEY
+  #       sync: false
